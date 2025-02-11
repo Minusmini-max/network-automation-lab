@@ -1,0 +1,33 @@
+name: Network Automation Lab 2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ansible/**'
+      - '.github/worksflows/network-automation.yaml'
+  schedule:
+    - cron: "*/45 * * * *"
+  workflow_dispatch:
+
+jobs:
+  configure-network:
+    runs-on:
+      - self-hosted
+      - network-lab-runner
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Run Ansible Playbook
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+        run: ansible-playbook ansible/configure_devices.yaml -i ansible/hosts --extra-vars "ansible_ssh_pass=${{ secrets.DEVICE_PASSWORD }} ansible_user=${{ secrets.DEVICE_USERNAME }}"
+
+      - name: Commit to the repo
+        run: |
+          git add ansible/backups
+          git commit -m 'Crontab backup'
+          git push "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/Minusmini-max/network-automation-lab.git"
